@@ -1,12 +1,15 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 import { Box, Heading, Text, VStack, HStack, Avatar, Icon, IconButton, Stagger, useDisclose, Center, Modal, Button, FormControl, TextArea, Input, KeyboardAvoidingView, ScrollView } from 'native-base';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { FlatList, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { allReviewsReference, getAllReviews } from '../../../utils/api/GetCalls';
+import AuthContext from '../../../context/AuthContext';
+import { allReviewsReference, getAllReviews, getUserAllReview } from '../../../utils/api/GetCalls';
+import { isNullOrEmpty } from '../../../utils/helperMethods';
 
 interface IReviewData {
     id: string,
@@ -21,22 +24,15 @@ interface IReviewData {
 }
 function MyReviews({ navigation }: any) {
     const { width, height } = useWindowDimensions();
+    const { user } = useContext(AuthContext)
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [userAllReviews, setUserAllReviews] = useState<IReviewData[]>([]);
-    // const userId = "RStIzjisaqcrJdHiRq828PfEvn53"
-    // const getAllReviews = async () => {
-    //     await allReviewsReference.where("reviewBy.userId", "==", userId).get().then((querySnapshot) => {
-    //         querySnapshot.forEach((doc) => {
-    //             console.log(doc.data())
-    //             // setUserAllReviews([...doc?.data()])
-    //         });
-    //     });
-    // }
-    useEffect(() => {
-        getAllReviews().then((data) => {
-            setUserAllReviews(data)
-        });
-    }, [userAllReviews]);
+    useFocusEffect(
+        React.useCallback(() => {
+            getUserAllReview(user?.uid).then((data) => {
+                setUserAllReviews(data);
+            });
+        }, []));
     return (
         <Box flex={1} py={2}>
             <Heading alignSelf={"center"} mb={2}>My Reviews</Heading>
@@ -44,8 +40,12 @@ function MyReviews({ navigation }: any) {
                 showModal={showDeleteModal}
                 setShowModal={setShowDeleteModal}
             />
-            <Box flex={1}>
-                <FlatList
+            {!isNullOrEmpty(userAllReviews) && userAllReviews?.length > 0 && <ReviewsView
+                userId={user?.uid}
+                userAllReviews={userAllReviews}
+            />}
+            {/* <Box flex={1}>
+                {!isNullOrEmpty(userAllReviews) && <FlatList
                     data={userAllReviews}
                     renderItem={(props) => <Card
                         item={props?.item}
@@ -54,8 +54,8 @@ function MyReviews({ navigation }: any) {
                     />}
 
                     keyExtractor={(item: any) => `${item?.id}`}
-                />
-            </Box>
+                />}
+            </Box> */}
 
         </Box>
 
@@ -83,11 +83,15 @@ const Card = ({ item, setShowDeleteModal, navigation }: any) => {
                 <Text>{item?.tags}</Text>
             </Box>
             <Box>
-                <IconButton mb="2" variant={"subtle"} rounded={"md"} icon={<Icon as={MaterialIcons} size="6" name="edit" color="blue.500" />} onPress={() => { navigation.navigate("EditReview") }} />
+                <IconButton mb="2" variant={"subtle"} rounded={"md"} icon={<Icon as={MaterialIcons} size="6" name="edit" color="blue.500" />}
+                // onPress={() => { navigation.navigate("EditReview") }} 
+                />
 
                 <IconButton mb="1" variant={"subtle"} rounded={"md"}
                     colorScheme={"danger"}
-                    icon={<Icon as={MaterialIcons} size="6" name="delete-outline" color="red.600" />} onPress={() => setShowDeleteModal(true)} />
+                    icon={<Icon as={MaterialIcons} size="6" name="delete-outline" color="red.600" />}
+                // onPress={() => setShowDeleteModal(true)} 
+                />
             </Box>
 
         </Box>
@@ -127,3 +131,20 @@ const DeleteReviewModal = ({
     </Center>;
 };
 
+const ReviewsView = ({ userId, userAllReviews }: {
+    userId: string,
+    userAllReviews: IReviewData[]
+}) => {
+    return <Box flex={1}>
+        {!isNullOrEmpty(userAllReviews) && <FlatList
+            data={userAllReviews}
+            renderItem={(props) => <Card
+                item={props?.item}
+            // setShowDeleteModal={setShowDeleteModal}
+            // navigation={navigation}
+            />}
+
+            keyExtractor={(item: any) => `${item?.id}`}
+        />}
+    </Box>
+}

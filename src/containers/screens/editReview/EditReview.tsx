@@ -6,6 +6,9 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 
 function EditReview({ navigation }: any) {
     const { register, handleSubmit, formState: { errors }, control } = useForm();
+
+    // ⭐ ⭐ should we pass data through params as stringified json and the parse it or normal way which is better
+
     const onSubmit = (formData: any) => {
         console.log(formData)
     }

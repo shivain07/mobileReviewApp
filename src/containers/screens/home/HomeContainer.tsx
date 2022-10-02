@@ -87,27 +87,11 @@ function HomeContainer({
                 <Avatar bg="amber.500" source={{
                     uri: user ? user?.photoURL : "notAvailable"
                 }} size="xl">
-                    NB
+                    userPic
                     {/* <Avatar.Badge bg="blue.100" /> */}
                 </Avatar>
-                {/* <Emitter
-                    numberOfParticles={50}
-                    emissionRate={5}
-                    interval={200}
-                    particleLife={2000}
-                    direction={180}
-                    spread={1500}
-                    fromPosition={{ x: width - (width / 2), y: 0 }}
-                    autoStart={true}
-                    infiniteLoop={false}
-                    width={width}
-                    height={height}
-                >
-                    <Box bg={"blue.200"} width={5} height={5} borderRadius={15}>
-                    </Box>
-                </Emitter> */}
-                {/* <Text fontSize="md">{user?.displayName}</Text>
-                <Text fontSize="sm">{user?.email}</Text> */}
+                <Text fontSize="md">{user?.displayName}</Text>
+                <Text fontSize="sm">{user?.email}</Text>
             </Box>
             <Box flex={1} my={2}>
                 <Box flexDirection={"row"} justifyContent={"space-around"} flex={1}>
