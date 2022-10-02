@@ -1,9 +1,10 @@
-import firestore from "@react-native-firebase/firestore"
+import firestore from "@react-native-firebase/firestore";
 
 const allReviewsReference = firestore().collection("allReviews");
-const userId = "RStIzjisaqcrJdHiRq828PfEvn53"
+const userCollectionReference = firestore().collection('users');
+
 const getAllReviews = () => {
-    return allReviewsReference.where("reviewBy.userId", "==", userId).get().then((querySnapshot) => {
+    return allReviewsReference.get().then((querySnapshot) => {
         let data: any = []
         querySnapshot.forEach((doc) => {
             data.push(doc.data());
@@ -11,9 +12,16 @@ const getAllReviews = () => {
         return data;
     });
 }
+const getUserAllReview = (userId: string) => {
+    return userCollectionReference.doc(userId).get().then((docSnapShot) => {
+        return docSnapShot.data()?.reviews;
+    })
+}
 
 
 export {
     getAllReviews,
-    allReviewsReference
+    allReviewsReference,
+    getUserAllReview,
+    userCollectionReference
 }

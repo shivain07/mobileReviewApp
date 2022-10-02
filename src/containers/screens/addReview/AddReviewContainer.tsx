@@ -1,7 +1,5 @@
 import { Box, Text, HStack, TextArea, VStack, Icon, Heading, Input, Button, FormControl, Toast, KeyboardAvoidingView, ScrollView } from 'native-base';
 import React, { useContext, useEffect, useState } from 'react';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { Keyboard, Alert, Platform, TouchableWithoutFeedback } from 'react-native';
 import AuthContext from '../../../context/AuthContext';
 import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore"
@@ -10,6 +8,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import uuid from 'react-native-uuid';
 import { NavigationContainer } from '@react-navigation/native';
 import { allReviewsReference } from '../../../utils/api/GetCalls';
+import { convertNullValuesToEmptyString, isNullOrEmpty } from '../../../utils/helperMethods';
 
 interface IUserDetails {
     name: string,
@@ -31,9 +30,7 @@ function AddReviewContainer({ navigation }: any) {
     const { isUserLoggedIn, setIsUserLoggedIn, setUser, user } = useContext(AuthContext)
     const { register, handleSubmit, formState: { errors }, control, setValue } = useForm();
     const [userDetails, setUserDetails] = useState<IUserDetails | FirebaseFirestoreTypes.DocumentData>();
-    // ⭐ currently userId and name is hard coded
-    const userId = "RStIzjisaqcrJdHiRq828PfEvn53"
-    const userDocument = firestore().collection('users').doc(userId);
+    const userDocument = firestore().collection('users').doc(user?.uid);
 
     useEffect(() => {
         userDocument.get().then((doc) => {
@@ -45,21 +42,25 @@ function AddReviewContainer({ navigation }: any) {
 
     const addUserReviewMethod = async (formData: any) => {
         let reviewId = `${uuid.v4()}`;
-        let updatedUserData = {
-            ...userDetails,
-            reviews: [...userDetails?.reviews, {
-                ...formData,
-                id: reviewId
-            }]
-        }
-        await userDocument.set(updatedUserData);
-        // ⭐ currently userId and name is hard coded
-        await allReviewsReference.doc(reviewId).set({
-            ...formData,
+        let reviewToAdd = {
             id: reviewId,
+            ...convertNullValuesToEmptyString(formData)
+        }
+
+        //use updateMethod if updating a doc is required as it won't rewrite the whole DOCUMENT    
+        await userDocument.update({
+            "reviews": [...userDetails?.reviews, {
+                ...reviewToAdd
+            }],
+            "isEdited": false
+        });
+
+        //use set to create new doc with custom id
+        await allReviewsReference.doc(reviewId).set({
+            ...reviewToAdd,
             reviewBy: {
-                userId: "RStIzjisaqcrJdHiRq828PfEvn53",
-                name: "Shivain"
+                userId: user?.uid,
+                name: user?.displayName
             }
         })
     }
@@ -69,7 +70,7 @@ function AddReviewContainer({ navigation }: any) {
                 Toast.show({
                     title: "Review added"
                 });
-                navigation.navigate("MyReview");
+                navigation.navigate("MyReview")
             })
         } catch (error) {
             console.log(error)
@@ -114,7 +115,7 @@ function AddReviewContainer({ navigation }: any) {
 
                                 )}
                             />
-                            {errors.review && <Text>This is required.</Text>}
+                            {errors.review && <Text color={"red.400"}>This is required.</Text>}
 
                             <Controller
                                 control={control}

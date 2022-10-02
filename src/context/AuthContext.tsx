@@ -6,9 +6,7 @@ const AuthContext = React.createContext<{
     isUserLoggedIn: boolean,
     setIsUserLoggedIn?: any
 }>({
-    user: {
-        userName:""
-    },
+    user: null,
     // setUser: undefined,
     isUserLoggedIn: false,
     // setIsUserLoggedIn: undefined
@@ -16,9 +14,7 @@ const AuthContext = React.createContext<{
 
 
 const AuthContextProvider = ({ children }: any) => {
-    const [user, setUser] = useState<{
-        userName: string
-    }>();
+    const [user, setUser] = useState<any | null>(null);
     const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean>(false);
     return (
         <AuthContext.Provider value={{ user, setUser, isUserLoggedIn, setIsUserLoggedIn }}>

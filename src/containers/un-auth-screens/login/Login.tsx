@@ -1,28 +1,21 @@
-import { VStack, Box, Center, Heading, Button, FormControl, Input, Link, HStack, Text, Icon, Spinner } from 'native-base';
+import { VStack, Box, Center, Heading, Button, FormControl, Input, Link, HStack, Text, Icon, Spinner, AlertDialog, Toast } from 'native-base';
 import React, { useContext, useEffect, useState } from 'react';
 import AntDesign from "react-native-vector-icons/AntDesign"
 import AuthContext from '../../../context/AuthContext';
 import auth from '@react-native-firebase/auth';
 import {
     GoogleSignin,
-    GoogleSigninButton,
-    statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { ActivityIndicator, Alert } from 'react-native';
+import { userCollectionReference } from '../../../utils/api/GetCalls';
 
 function Login({ navigation }: any) {
     const { setIsUserLoggedIn, setUser } = useContext(AuthContext);
 
     const [isSigningIn, setIsSigningIn] = useState(false);
-    useEffect(() => {
-        GoogleSignin.configure({
-            webClientId: '180143170660-fp0kkti2ns94jpapg18ge2o5csvt1ksc.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID 
-        });
-    }, []);
 
 
-    const loginHandler = async () => {
-        setIsSigningIn(true);
+    async function onGoogleButtonPress() {
         // Get the users ID token
         const { idToken } = await GoogleSignin.signIn();
 
@@ -30,11 +23,56 @@ function Login({ navigation }: any) {
         const googleCredential = auth.GoogleAuthProvider.credential(idToken);
 
         // Sign-in the user with the credential
-        auth().signInWithCredential(googleCredential).then((result) => {
-            console.log("result", result)
+        return auth().signInWithCredential(googleCredential);
+    }
+    const addingUserToDatabase = async (data: any) => {
+        const loggedInUserId = data?.user?.uid
+        const userDetailsObj = {
+            uid: data?.user?.uid,
+            displayName: data?.user?.displayName,
+            email: data?.user?.email,
+            photoUrl: data?.user?.photoURL,
+            reviews: []
+
+        }
+        await userCollectionReference.doc(loggedInUserId).set(userDetailsObj);
+        setUser(data?.user);
+        setIsUserLoggedIn(true);
+        setIsSigningIn(false);
+
+    }
+    const getUserDetails = async () => {
+
+    }
+    const loginHandler = async () => {
+        setIsSigningIn(true);
+
+        // ⭐ :TODO need to check list of doc  if user then don't update the userData
+        onGoogleButtonPress().then((data) => {
+            try {
+                // 📛 check data?.user?.id == collection.users(data?.user?.id)
+                // if true ▶️ setUser(response.data);
+                // else true ▶️ addingUserToDatabase(response.data);
+                userCollectionReference.doc(data?.user?.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        console.log(doc)
+                        setUser(doc.data())
+                    } else {
+                        addingUserToDatabase(data);
+                    }
+                })
+            } catch (error) {
+                Toast.show({
+                    title: "Error occured saving userInfo to DB"
+                });
+            }
         }).catch((err) => {
-            Alert.alert(err)
-        });
+            setIsSigningIn(false)
+            Toast.show({
+                title: "Error occured while signining In"
+            });
+        })
+
     }
     return <Box flex={1} justifyContent={"center"} >
         <Center w="100%">

@@ -12,27 +12,29 @@ import AuthContext, { AuthContextProvider } from './src/context/AuthContext';
 import AuthenticatedPagesStack from './src/navigators/Authenticated/AuthenticatedPagesStack';
 import UnAuthenticatedPagesStack from './src/navigators/UnAuthenticated/UnAuthenticatedPagesStack';
 import onAuthStateChanged from './src/AuthHelper';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 
 const App = () => {
-  const [initializing, setInitializing] = useState(true);
-  const { setIsUserLoggedIn, isUserLoggedIn, setUser } = useContext(AuthContext);
-
+  const [isSettingUpFirebase, setIsSettingUpFirebase] = useState(true);
+  const { setIsUserLoggedIn, isUserLoggedIn, setUser, user } = useContext(AuthContext);
   useEffect(() => {
-    setUser({
-      userName: "Shivain Gusain",
-      email: "shivain@gmail.com",
-      photoURL: "https://lh3.googleusercontent.com/a-/ACNPEu8z_V8jG6an19ZZd74OEu6p9Zka5_mwekmi590p=s96-c",
-      id: "RStIzjisaqcrJdHiRq828PfEvn53"
-    })
+    checkIfUserIsLoggedIn();
   }, []);
 
-
-  // function onAuthStateChanged(userData: any) {
-  //   setUser(userData);
-  //   setIsUserLoggedIn(false)
-  //   if (initializing) setInitializing(false);
-  // }
+  // Handle user state changes
+  function onAuthStateChanged(user: any) {
+    setUser(user);
+    if (isSettingUpFirebase) setIsSettingUpFirebase(false);
+  }
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '180143170660-fp0kkti2ns94jpapg18ge2o5csvt1ksc.apps.googleusercontent.com', // client ID of type WEB for your server (needed to verify user ID 
+    });
+  }, []);
+  const checkIfUserIsLoggedIn = () => {
+    auth().onAuthStateChanged(onAuthStateChanged);
+  }
   // useEffect(() => {
   //   const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
   //   return subscriber; // unsubscribe on unmount
@@ -45,11 +47,11 @@ const App = () => {
         <NativeBaseProvider>
           <NavigationContainer>
             <View style={{ flex: 1 }}>
-              {false ? < ActivityIndicator size="large" color="#00ff00" style={{
+              {isSettingUpFirebase ? < ActivityIndicator size="large" color="#00ff00" style={{
                 alignSelf: "center",
                 justifyContent: "center"
               }} /> : <>
-                {true ? <AuthenticatedPagesStack /> : <UnAuthenticatedPagesStack />}
+                {user ? <AuthenticatedPagesStack /> : <UnAuthenticatedPagesStack />}
               </>}
             </View>
           </NavigationContainer>
